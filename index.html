@@ -609,6 +609,26 @@ tr.is-focus .cellsub { color: inherit; }
 .rh-q2 { background: var(--tag-yellow-bg); color: var(--tag-yellow-text); }
 .rh-q3 { background: var(--tag-red-bg); color: var(--tag-red-text); }
 .rh-q5 { background: transparent; border: 1px solid var(--border-strong); color: var(--text-secondary); }
+/* quarter range slider */
+.rh-slider-field { padding: 0 var(--spacing-05) var(--spacing-03); }
+.rh-slider-wrap { position: relative; height: 56px; margin-top: var(--spacing-03); }
+.rh-slider-track { position: absolute; left: 0; right: 0; top: 14px; height: 4px;
+  background: var(--border-subtle); border-radius: 2px; pointer-events: none; }
+.rh-slider-fill { position: absolute; top: 0; height: 4px; background: var(--link-primary); border-radius: 2px; }
+.rh-slider { position: absolute; top: 0; left: 0; width: 100%; height: 32px;
+  -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
+  outline: none; margin: 0; padding: 0; }
+.rh-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%; background: var(--link-primary);
+  border: 2px solid var(--background); box-shadow: 0 0 0 2px var(--link-primary);
+  pointer-events: auto; cursor: pointer; }
+.rh-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%;
+  background: var(--link-primary); border: 2px solid var(--background);
+  box-shadow: 0 0 0 2px var(--link-primary); pointer-events: auto; cursor: pointer; }
+.rh-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--focus); }
+.rh-slider--end { z-index: 1; }
+.rh-slider-ticks { display: flex; justify-content: space-between; padding-top: 36px;
+  font-size: 11px; color: var(--text-secondary); pointer-events: none; user-select: none; }
 /* seller autocomplete */
 .rh-ac-wrap { position: relative; }
 .rh-ac-list { position: absolute; z-index: 200; left: 0; right: 0; top: calc(100% + 2px);
@@ -799,12 +819,22 @@ tr.is-focus .cellsub { color: inherit; }
         </div>
       </div>
 
-      <div class="rh-row">
-        <span class="t-label">Quick ranges</span>
-        <button type="button" class="chip" data-rh-quarters="1">Last quarter</button>
-        <button type="button" class="chip" data-rh-quarters="2">Last 2 quarters</button>
-        <button type="button" class="chip" data-rh-quarters="4">Last 4 quarters</button>
-        <button type="button" class="chip" data-rh-quarters="8">Last 8 quarters</button>
+      <div class="field rh-slider-field">
+        <label id="rh-slider-label">Quarter range: <b id="rh-slider-display">Last 4 quarters</b></label>
+        <div class="rh-slider-wrap" aria-labelledby="rh-slider-label">
+          <input id="rh-qstart" class="rh-slider" type="range" min="1" max="12" value="4"
+            aria-label="Start quarters ago" aria-valuetext="4 quarters ago">
+          <input id="rh-qend" class="rh-slider rh-slider--end" type="range" min="0" max="11" value="0"
+            aria-label="End quarters ago" aria-valuetext="Current quarter">
+          <div class="rh-slider-track" aria-hidden="true">
+            <div id="rh-slider-fill" class="rh-slider-fill"></div>
+          </div>
+          <div class="rh-slider-ticks" aria-hidden="true">
+            <span>1Q</span><span>2Q</span><span>3Q</span><span>4Q</span><span>5Q</span>
+            <span>6Q</span><span>7Q</span><span>8Q</span><span>9Q</span><span>10Q</span>
+            <span>11Q</span><span>12Q</span>
+          </div>
+        </div>
       </div>
 
       <div class="rh-row">
@@ -1699,7 +1729,9 @@ function initReheat() {
     zones: $('#rh-zones'), count: $('#rh-zone-count'),
     start: $('#rh-start'), end: $('#rh-end'), min: $('#rh-min'), max: $('#rh-max'), pg: $('#rh-pg'),
     run: $('#rh-run'), status: $('#rh-status'), results: $('#rh-results'), meta: $('#rh-meta'),
-    body: $('#rh-body'), download: $('#rh-download')
+    body: $('#rh-body'), download: $('#rh-download'),
+    qstart: $('#rh-qstart'), qend: $('#rh-qend'),
+    sliderDisplay: $('#rh-slider-display'), sliderFill: $('#rh-slider-fill')
   };
   const picked = new Set();
   // Seed names from seats.json snapshot embedded in the page so suggestions work on GitHub Pages.
@@ -1749,9 +1781,19 @@ function initReheat() {
   function acPick(name) {
     el.seller.value = name;
     acHide();
-    // apply zones if this is a known BTS seller
-    const key = Object.keys(sellerZones).find(k => k.toLowerCase() === name.toLowerCase());
-    if (key) { picked.clear(); sellerZones[key].forEach(z => picked.add(z)); renderZones(); }
+    const lower = name.toLowerCase();
+    // 1. Try API-sourced zones (available when server is running)
+    const apiKey = Object.keys(sellerZones).find(k => k.toLowerCase() === lower);
+    if (apiKey) {
+      picked.clear(); sellerZones[apiKey].forEach(z => picked.add(z)); renderZones(); return;
+    }
+    // 2. Fall back to D.seats embedded in the page (works on GitHub Pages too)
+    const seats = D.seats.filter(s => s.name && s.name.toLowerCase() === lower);
+    if (seats.length) {
+      picked.clear();
+      seats.forEach(s => (s.zones || []).forEach(z => picked.add(z)));
+      renderZones();
+    }
   }
   el.seller.addEventListener('input', () => acShow(el.seller.value));
   el.seller.addEventListener('keydown', e => {
@@ -1804,12 +1846,43 @@ function initReheat() {
     return z.length === picked.size && z.every(x => picked.has(x)) ? n : '';
   }
 
-  function range(quarters) {
-    const t = new Date();
-    const q = t.getFullYear() * 4 + Math.floor(t.getMonth() / 3) - quarters;
+  // ── quarter range slider ─────────────────────────────────────────────────
+  function qLabel(v) {
+    return v === 0 ? 'Current quarter' : v === 1 ? '1 quarter ago' : `${v} quarters ago`;
+  }
+  function sliderDates(startQ, endQ) {
+    // startQ = quarters ago for start, endQ = quarters ago for end (endQ < startQ)
     const iso = d => d.toISOString().slice(0, 10);
-    el.start.value = iso(new Date(Date.UTC(Math.floor(q / 4), (q % 4) * 3, 1)));
-    el.end.value = iso(new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())));
+    const now = new Date();
+    const curQ = now.getFullYear() * 4 + Math.floor(now.getMonth() / 3);
+    const fromQ = curQ - startQ;
+    const toQ   = curQ - endQ;
+    el.start.value = iso(new Date(Date.UTC(Math.floor(fromQ / 4), (fromQ % 4) * 3, 1)));
+    const toEnd = new Date(Date.UTC(Math.floor(toQ / 4), (toQ % 4) * 3 + 3, 0));
+    el.end.value = iso(toEnd > now ? now : toEnd);
+  }
+  function sliderSync() {
+    let s = parseInt(el.qstart.value, 10);
+    let e = parseInt(el.qend.value, 10);
+    // enforce start > end (start is further back)
+    if (s <= e) { s = e + 1; el.qstart.value = s; }
+    el.qstart.setAttribute('aria-valuetext', qLabel(s));
+    el.qend.setAttribute('aria-valuetext', qLabel(e));
+    const max = parseInt(el.qstart.max, 10);
+    const pctStart = ((s - 1) / (max - 1)) * 100;
+    const pctEnd   = (e / (max - 1)) * 100;
+    el.sliderFill.style.left  = pctEnd + '%';
+    el.sliderFill.style.width = (pctStart - pctEnd) + '%';
+    const span = s === 1 ? '1 quarter' : `${s} quarters`;
+    el.sliderDisplay.textContent = e === 0 ? `Last ${span}` : `${qLabel(s)} → ${qLabel(e)}`;
+    sliderDates(s, e);
+  }
+  el.qstart.addEventListener('input', sliderSync);
+  el.qend.addEventListener('input', sliderSync);
+  function range(quarters) {
+    el.qstart.value = quarters;
+    el.qend.value = 0;
+    sliderSync();
   }
 
   const QUEUE = { 1: '1 First pass', 2: '2 Resolve then pursue', 3: '3 New trigger needed', 4: '4 Hold / cleanup', 5: '5 Open-account overlap' };
@@ -1902,10 +1975,9 @@ function initReheat() {
     $$('.rh-region', el.zones).forEach((d, i) => { if (open[i]) d.open = true; });
   });
   $('#rh-zones-clear').addEventListener('click', () => { picked.clear(); renderZones(); });
-  $$('[data-rh-quarters]').forEach(b => b.addEventListener('click', () => range(parseInt(b.dataset.rhQuarters, 10))));
   el.run.addEventListener('click', runQuery);
   $('#rh-reset').addEventListener('click', () => {
-    el.seller.value = ''; picked.clear(); renderZones(); range(4);
+    el.seller.value = ''; acHide(); picked.clear(); renderZones(); range(4);
     el.min.value = '8000'; el.max.value = '10'; el.pg.value = 'Data Platform';
     el.results.hidden = true; el.status.hidden = true;
   });
