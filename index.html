@@ -609,6 +609,17 @@ tr.is-focus .cellsub { color: inherit; }
 .rh-q2 { background: var(--tag-yellow-bg); color: var(--tag-yellow-text); }
 .rh-q3 { background: var(--tag-red-bg); color: var(--tag-red-text); }
 .rh-q5 { background: transparent; border: 1px solid var(--border-strong); color: var(--text-secondary); }
+/* seller autocomplete */
+.rh-ac-wrap { position: relative; }
+.rh-ac-list { position: absolute; z-index: 200; left: 0; right: 0; top: calc(100% + 2px);
+  max-height: 260px; overflow-y: auto; margin: 0; padding: var(--spacing-02) 0; list-style: none;
+  background: var(--layer-01); border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.rh-ac-list li { padding: var(--spacing-02) var(--spacing-04); cursor: pointer; font-size: 14px;
+  color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rh-ac-list li:hover,
+.rh-ac-list li[aria-selected="true"] { background: var(--layer-hover-01); }
+.rh-ac-list li mark { background: none; color: var(--link-primary); font-weight: 600; }
 
 </style>
 </head>
@@ -740,9 +751,12 @@ tr.is-focus .cellsub { color: inherit; }
       <div class="rh-grid">
         <div class="field rh-span">
           <label for="rh-seller">Start from a seller (optional)</label>
-          <input id="rh-seller" class="input" type="text" list="rh-seller-list" placeholder="Type a name to fill in that seller's zones" autocomplete="off">
-          <datalist id="rh-seller-list"></datalist>
-          <span class="t-helper">Choosing a seller selects their zones below. You can then add or remove zones.</span>
+          <div class="rh-ac-wrap" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="rh-ac-list">
+            <input id="rh-seller" class="input" type="text" placeholder="Type a seller name…" autocomplete="off"
+              aria-autocomplete="list" aria-controls="rh-ac-list" aria-activedescendant="">
+            <ul id="rh-ac-list" class="rh-ac-list" role="listbox" aria-label="Seller suggestions" hidden></ul>
+          </div>
+          <span class="t-helper">Pick a seller to fill in their zones. You can then add or remove zones, or type any name.</span>
         </div>
       </div>
 
@@ -1681,14 +1695,74 @@ function setPage(p) {
 function initReheat() {
   const API = location.origin;
   const el = {
-    seller: $('#rh-seller'), sellerList: $('#rh-seller-list'), zones: $('#rh-zones'), count: $('#rh-zone-count'),
+    seller: $('#rh-seller'), acList: $('#rh-ac-list'), acWrap: $('#rh-ac-list').parentElement,
+    zones: $('#rh-zones'), count: $('#rh-zone-count'),
     start: $('#rh-start'), end: $('#rh-end'), min: $('#rh-min'), max: $('#rh-max'), pg: $('#rh-pg'),
     run: $('#rh-run'), status: $('#rh-status'), results: $('#rh-results'), meta: $('#rh-meta'),
     body: $('#rh-body'), download: $('#rh-download')
   };
   const picked = new Set();
+  // Seed names from seats.json snapshot embedded in the page so suggestions work on GitHub Pages.
+  // The API response merges extras when the server is running.
   let sellerZones = {};
+  let allNames = D.seats
+    .filter(s => s.name && !s.name.startsWith('Open') && !/^[a-z]{3,12}$/.test(s.name))
+    .map(s => s.name)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .sort();
   let validZones = new Set(Object.keys(D.zoneLabel));
+
+  // ── autocomplete ────────────────────────────────────────────────────────────
+  let acIdx = -1;
+  function acHide() {
+    el.acList.hidden = true;
+    el.acWrap.setAttribute('aria-expanded', 'false');
+    el.seller.removeAttribute('aria-activedescendant');
+    acIdx = -1;
+  }
+  function acHighlight(i) {
+    const items = el.acList.querySelectorAll('li');
+    items.forEach((li, k) => {
+      li.setAttribute('aria-selected', k === i ? 'true' : 'false');
+      if (k === i) el.seller.setAttribute('aria-activedescendant', li.id);
+    });
+    acIdx = i;
+    if (i >= 0) items[i] && items[i].scrollIntoView({ block: 'nearest' });
+  }
+  function acShow(q) {
+    const lower = q.toLowerCase().trim();
+    if (!lower) { acHide(); return; }
+    const matches = allNames.filter(n => n.toLowerCase().includes(lower)).slice(0, 12);
+    if (!matches.length) { acHide(); return; }
+    el.acList.innerHTML = matches.map((n, i) => {
+      const re = new RegExp(lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      const highlighted = esc(n).replace(re, m => `<mark>${esc(m)}</mark>`);
+      return `<li id="rh-ac-${i}" role="option" aria-selected="false">${highlighted}</li>`;
+    }).join('');
+    el.acList.hidden = false;
+    el.acWrap.setAttribute('aria-expanded', 'true');
+    acIdx = -1;
+    el.acList.querySelectorAll('li').forEach((li, i) => {
+      li.addEventListener('mousedown', e => { e.preventDefault(); acPick(matches[i]); });
+    });
+  }
+  function acPick(name) {
+    el.seller.value = name;
+    acHide();
+    // apply zones if this is a known BTS seller
+    const key = Object.keys(sellerZones).find(k => k.toLowerCase() === name.toLowerCase());
+    if (key) { picked.clear(); sellerZones[key].forEach(z => picked.add(z)); renderZones(); }
+  }
+  el.seller.addEventListener('input', () => acShow(el.seller.value));
+  el.seller.addEventListener('keydown', e => {
+    if (el.acList.hidden) return;
+    const items = el.acList.querySelectorAll('li');
+    if (e.key === 'ArrowDown') { e.preventDefault(); acHighlight(Math.min(acIdx + 1, items.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); acHighlight(Math.max(acIdx - 1, 0)); }
+    else if (e.key === 'Enter' && acIdx >= 0) { e.preventDefault(); acPick(items[acIdx].textContent); }
+    else if (e.key === 'Escape') acHide();
+  });
+  el.seller.addEventListener('blur', () => setTimeout(acHide, 150));
 
   const zoneRegion = {};
   D.hubs.forEach(h => h.zones.forEach(z => { zoneRegion[z] = h.region; }));
@@ -1827,13 +1901,6 @@ function initReheat() {
     renderZones();
     $$('.rh-region', el.zones).forEach((d, i) => { if (open[i]) d.open = true; });
   });
-  el.seller.addEventListener('input', () => {
-    const n = matchSeller();
-    if (!n) return;
-    picked.clear();
-    sellerZones[n].forEach(z => picked.add(z));
-    renderZones();
-  });
   $('#rh-zones-clear').addEventListener('click', () => { picked.clear(); renderZones(); });
   $$('[data-rh-quarters]').forEach(b => b.addEventListener('click', () => range(parseInt(b.dataset.rhQuarters, 10))));
   el.run.addEventListener('click', runQuery);
@@ -1850,7 +1917,9 @@ function initReheat() {
     .then(d => {
       sellerZones = d.seller_zones || {};
       if (Array.isArray(d.valid_zones)) validZones = new Set(d.valid_zones);
-      el.sellerList.innerHTML = (d.sellers || []).map(n => `<option value="${esc(n)}"></option>`).join('');
+      // Merge server-side seller names into allNames (dedup, re-sort)
+      const extra = (d.sellers || []).filter(n => !allNames.includes(n));
+      if (extra.length) { allNames = [...allNames, ...extra].sort(); }
       renderZones();
     })
     .catch(() => { /* the tab shows a clear message when a query is attempted */ });
