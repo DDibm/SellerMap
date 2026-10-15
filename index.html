@@ -1567,10 +1567,11 @@ function renderStatebar() {
     return `<span class="statebar__state-badge" title="${esc(D.stateName[st] || st)}">${icon}<span class="statebar__state-abbr">${esc(st.replace(':', '\u2009'))}</span></span>`;
   }).join('');
 
-  // Build person→states mapping: which of the active states does each person cover?
+  // Build person→states mapping: only roles currently toggled on in the filter panel
   const peopleMap = new Map();
   activeStates.forEach(st => {
     D.roles.forEach(r => {
+      if (!S.roles.has(r.id)) return;
       const entries = BY_STATE[st][r.id] || [];
       entries.forEach(e => {
         if (!peopleMap.has(e.seat.id)) {
