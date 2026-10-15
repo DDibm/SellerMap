@@ -433,26 +433,27 @@ ul, ol { list-style: none; }
 /* State info banner — shown above the map when a state is focused */
 .statebar {
   display: none;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--spacing-02) var(--spacing-04);
-  padding: var(--spacing-03) var(--spacing-05);
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--layer-01);
+  flex-direction: column;
+  gap: var(--spacing-02);
+  padding: var(--spacing-04) var(--spacing-05);
+  border-bottom: 2px solid var(--interactive);
+  background: var(--layer-02);
 }
 .statebar.is-visible { display: flex; }
-.statebar__name { font-size: 15px; font-weight: 600; white-space: nowrap; }
-.statebar__dismiss { margin-left: auto; background: transparent; border: 0; color: var(--text-secondary); font-size: 18px; line-height: 1; padding: 0 4px; cursor: pointer; }
+.statebar__header { display: flex; align-items: center; gap: var(--spacing-03); }
+.statebar__name { font-size: 16px; font-weight: 700; }
+.statebar__label { font-size: 12px; color: var(--text-secondary); margin-left: 2px; }
+.statebar__dismiss { margin-left: auto; background: transparent; border: 0; color: var(--text-secondary); font-size: 20px; line-height: 1; padding: 0 4px; cursor: pointer; }
 .statebar__dismiss:hover { color: var(--text-primary); }
-.statebar__people { display: flex; flex-wrap: wrap; gap: 6px; }
+.statebar__people { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 .statebar__person {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 2px 10px 2px 8px; border-radius: 24px;
-  background: var(--layer-02); border: 1px solid var(--border-subtle);
-  font-size: 12px; line-height: 18px;
+  padding: 4px 12px 4px 10px; border-radius: 4px;
+  background: var(--layer-01); border: 1px solid var(--border-strong);
+  font-size: 13px; line-height: 20px;
   cursor: pointer;
 }
-.statebar__person:hover { border-color: var(--border-strong); background: var(--layer-hover); }
+.statebar__person:hover { border-color: var(--interactive); background: var(--layer-hover); }
 .statebar__person.is-on {
   background: var(--seat-color, var(--interactive));
   border-color: transparent;
@@ -462,7 +463,29 @@ ul, ol { list-style: none; }
 .statebar__person.is-on:hover { filter: brightness(0.88); }
 .statebar__person.is-disabled { opacity: 0.45; cursor: not-allowed; }
 .statebar__dot { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--seat-color); }
+.statebar__name-text { font-weight: 600; }
 .statebar__role { color: var(--text-secondary); font-size: 11px; }
+.statebar__empty { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+/* State mini-icon in header */
+.statebar__title-row { display: flex; align-items: center; gap: var(--spacing-03); flex-wrap: wrap; }
+.statebar__title-text { display: flex; flex-direction: column; gap: 1px; }
+.statebar__state-badge {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 4px 6px; border-radius: 4px;
+  background: var(--layer-01); border: 1px solid var(--border-strong);
+  color: var(--text-primary); min-width: 36px;
+}
+.statebar__state-icon { display: block; }
+.statebar__state-abbr { font-size: 10px; font-weight: 700; letter-spacing: 0.02em; line-height: 1; font-family: var(--font-mono); }
+/* State mini-icon inside person pill */
+.statebar__person-state {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 2px 4px; border-radius: 3px;
+  background: rgba(0,0,0,0.06);
+  margin-right: 2px;
+}
+.statebar__person.is-on .statebar__person-state { background: rgba(255,255,255,0.18); }
+.statebar__person-abbr { font-size: 9px; font-weight: 700; letter-spacing: 0.02em; line-height: 1; font-family: var(--font-mono); }
 .place__title { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: 0; }
 .place__hub { display: grid; gap: 2px; margin-top: var(--spacing-02); }
 .block { margin-top: var(--spacing-05); }
@@ -704,11 +727,7 @@ tr.is-focus .cellsub { color: inherit; }
         <button class="tab" type="button" role="tab" data-view="table" aria-selected="false">Table</button>
       </div>
       <div class="selbar" id="selbar"></div>
-      <div class="statebar" id="statebar">
-        <span class="statebar__name" id="statebar-name"></span>
-        <div class="statebar__people" id="statebar-people"></div>
-        <button type="button" class="statebar__dismiss" id="statebar-dismiss" aria-label="Clear state selection">×</button>
-      </div>
+      <div class="statebar" id="statebar"></div>
       <div class="stage__body">
         <div id="view-map">
           <div class="mapbox" id="mapbox">
@@ -1289,7 +1308,6 @@ function toggleStateLight(st) {
   paintMap(); renderDetail(); renderStatebar();
   if (S.view === 'table') renderTable();
   const body = $('#detailBody'); body.scrollTop = 0;
-  if (window.matchMedia('(max-width: 799px)').matches) $('.col-detail-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function addBtsTerritoriesToMap(st) {
@@ -1512,18 +1530,47 @@ function renderTable() {
 
 /* ------------------------------------------------------------------ actions */
 /* ------------------------------------------------------------------ state banner */
+// Build a tiny SVG showing the outline of one or more states, scaled to fit a fixed box.
+function stateIconSVG(stateIds, size = 24) {
+  const paths = stateIds.map(id => M.states.find(s => s.id === id)).filter(Boolean);
+  if (!paths.length) return '';
+  // Compute combined bounding box
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  paths.forEach(s => {
+    const [x0, y0, x1, y1] = s.bbox;
+    if (x0 < minX) minX = x0; if (y0 < minY) minY = y0;
+    if (x1 > maxX) maxX = x1; if (y1 > maxY) maxY = y1;
+  });
+  const w = maxX - minX, h = maxY - minY;
+  const scale = size / Math.max(w, h);
+  const tx = -minX * scale + (size - w * scale) / 2;
+  const ty = -minY * scale + (size - h * scale) / 2;
+  const pathsHtml = paths.map(s => `<path d="${s.d}" fill="currentColor" opacity="0.85"/>`).join('');
+  return `<svg class="statebar__state-icon" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true"><g transform="translate(${tx.toFixed(1)},${ty.toFixed(1)}) scale(${scale.toFixed(4)})">${pathsHtml}</g></svg>`;
+}
+
 function renderStatebar() {
   const bar = $('#statebar');
   const activeStates = S.litStates.size ? Array.from(S.litStates) : (S.focus ? [S.focus] : []);
   if (!activeStates.length) { bar.classList.remove('is-visible'); return; }
 
   const namesLabel = activeStates.map(st => D.stateName[st] || st).join(', ');
-  $('#statebar-name').textContent = activeStates.length > 1 ? `${activeStates.length} states: ${namesLabel}` : D.stateName[activeStates[0]];
+  const stateLabel = activeStates.length > 1
+    ? `${activeStates.length} states: ${namesLabel}`
+    : D.stateName[activeStates[0]] || activeStates[0];
+  const sublabel = activeStates.length > 1 ? 'People covering any of these states' : 'People covering this state';
 
+  // Build state mini-icons for the header (one per selected state)
+  const headerIcons = activeStates.map(st => {
+    const abbr = st.split(':')[0]; // strip zone suffix (TX:N → TX)
+    const icon = stateIconSVG([abbr]);
+    return `<span class="statebar__state-badge" title="${esc(D.stateName[st] || st)}">${icon}<span class="statebar__state-abbr">${esc(st.replace(':', '\u2009'))}</span></span>`;
+  }).join('');
+
+  // Build person→states mapping: which of the active states does each person cover?
   const peopleMap = new Map();
   activeStates.forEach(st => {
     D.roles.forEach(r => {
-      if (!S.roles.has(r.id)) return;
       const entries = BY_STATE[st][r.id] || [];
       entries.forEach(e => {
         if (!peopleMap.has(e.seat.id)) {
@@ -1531,22 +1578,46 @@ function renderStatebar() {
           const full = S.sel.length >= MAXSEL && !on;
           const cssVar = on ? `--c${S.slot[e.seat.id]}` : null;
           const name = e.seat.vacant ? 'Open seat' : e.seat.name;
-          const area = !e.full ? ` (${e.have.map(z => ZSHORT[z]||z).join(', ')})` : '';
-          peopleMap.set(e.seat.id, { id: e.seat.id, name, role: r.label, cssVar, on, full, area });
+          peopleMap.set(e.seat.id, { id: e.seat.id, name, role: r.label, cssVar, on, full, states: [] });
         }
+        // Track which states this person covers among the selected ones
+        peopleMap.get(e.seat.id).states.push(st);
       });
     });
   });
 
   const people = Array.from(peopleMap.values());
-  if (!people.length) { bar.classList.remove('is-visible'); return; }
 
-  $('#statebar-people').innerHTML = people.map(p => {
-    const classes = ['statebar__person', p.on ? 'is-on' : '', p.full ? 'is-disabled' : ''].filter(Boolean).join(' ');
-    const style = p.cssVar ? `--seat-color:var(${p.cssVar})` : '';
-    const dot = p.on ? `<span class="statebar__dot"></span>` : '';
-    return `<button type="button" class="${classes}"${style ? ` style="${style}"` : ''} data-act="toggle" data-seat="${esc(p.id)}" ${p.full ? 'disabled' : ''} aria-pressed="${p.on}">${dot}<span>${esc(p.name)}${p.area ? `<span style="opacity:.65"> ${esc(p.area)}</span>` : ''}</span><span class="statebar__role">${esc(p.role)}</span></button>`;
-  }).join('');
+  bar.innerHTML = `
+    <div class="statebar__header">
+      <div class="statebar__title-row">
+        ${headerIcons}
+        <div class="statebar__title-text">
+          <span class="statebar__name">${esc(stateLabel)}</span>
+          <span class="statebar__label">${esc(sublabel)}</span>
+        </div>
+      </div>
+      <button type="button" class="statebar__dismiss" id="statebar-dismiss" aria-label="Clear state selection">×</button>
+    </div>
+    <div class="statebar__people" id="statebar-people">
+      ${people.length ? people.map(p => {
+        const classes = ['statebar__person', p.on ? 'is-on' : '', p.full ? 'is-disabled' : ''].filter(Boolean).join(' ');
+        const style = p.cssVar ? `--seat-color:var(${p.cssVar})` : '';
+        const dot = p.on ? `<span class="statebar__dot"></span>` : '';
+        // Show mini state icons for all states this person covers (deduplicated base abbrev)
+        const personStateIds = [...new Set(p.states.map(z => z.split(':')[0]))];
+        const personIcons = personStateIds.map(id =>
+          `<span class="statebar__person-state" title="${esc(D.stateName[id] || id)}">${stateIconSVG([id], 18)}<span class="statebar__person-abbr">${esc(id)}</span></span>`
+        ).join('');
+        return `<button type="button" class="${classes}"${style ? ` style="${style}"` : ''} data-act="toggle" data-seat="${esc(p.id)}" ${p.full ? 'disabled' : ''} aria-pressed="${p.on}">${dot}${personIcons}<span class="statebar__name-text">${esc(p.name)}</span><span class="statebar__role">${esc(p.role)}</span></button>`;
+      }).join('') : `<span class="statebar__empty">No people in the active role layers cover this state. Turn on more roles in the filter panel.</span>`}
+    </div>`;
+
+  // Re-attach dismiss listener since we re-rendered the DOM
+  bar.querySelector('#statebar-dismiss').addEventListener('click', () => {
+    S.focus = null; S.litStates.clear(); paintMap(); renderDetail(); renderStatebar();
+    if (S.view === 'table') renderTable();
+  });
 
   bar.classList.add('is-visible');
 }
@@ -1558,7 +1629,6 @@ function focusState(st) {
   paintMap(); renderDetail(); renderStatebar();
   if (S.view === 'table') renderTable();
   const body = $('#detailBody'); body.scrollTop = 0;
-  if (window.matchMedia('(max-width: 799px)').matches) $('.col-detail-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function setSeat(id, on) {
@@ -1690,7 +1760,6 @@ function init() {
     const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     applyTheme(cur === 'dark' ? 'light' : 'dark');
   });
-  $('#statebar-dismiss').addEventListener('click', () => { S.focus = null; S.litStates.clear(); paintMap(); renderDetail(); renderStatebar(); if (S.view === 'table') renderTable(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && (S.focus || S.litStates.size) && !e.target.closest('input,select')) { S.focus = null; S.litStates.clear(); paintMap(); renderDetail(); renderStatebar(); if (S.view === 'table') renderTable(); } });
   try { const t = localStorage.getItem('cov-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) { /* ignore */ }
 
