@@ -355,8 +355,10 @@ ul, ol { list-style: none; }
 .st .base { fill: var(--map-state); stroke: var(--map-stroke); stroke-width: 1; transition: fill 110ms; }
 .st:hover .base { stroke: var(--text-secondary); stroke-width: 1.5; }
 .st:focus-visible .base { stroke: var(--focus); stroke-width: 2.5; }
+.st.is-lit .base { fill: var(--tag-blue-bg); stroke: var(--interactive); stroke-width: 1.5; }
 .st .ov { pointer-events: none; }
 .ring { fill: none; stroke: var(--text-primary); stroke-width: 2.5; pointer-events: none; stroke-linejoin: round; }
+.ring-lit { fill: none; stroke: var(--interactive); stroke-width: 2; pointer-events: none; stroke-linejoin: round; }
 .hubring { fill: none; stroke: var(--interactive); stroke-width: 2.5; stroke-dasharray: 6 4; pointer-events: none; stroke-linejoin: round; }
 .leader { stroke: var(--text-secondary); stroke-width: 1; fill: none; }
 .nyc { cursor: pointer; }
@@ -373,6 +375,7 @@ ul, ol { list-style: none; }
 .terr__tile { min-width: 48px; height: 32px; padding: 0 10px; border: 1px solid var(--map-stroke); background: var(--map-state); color: var(--label); font-size: 12px; font-weight: 600; letter-spacing: 0.2px; }
 .terr__tile:hover { border-color: var(--text-secondary); }
 .terr__tile.is-focus { outline: 2.5px solid var(--text-primary); outline-offset: 1px; }
+.terr__tile.is-lit { background: var(--tag-blue-bg); border-color: var(--interactive); color: var(--tag-blue-text); }
 .terr__tile span { text-shadow: 0 0 2px var(--halo), 0 0 3px var(--halo), 0 0 3px var(--halo); }
 .legend { display: flex; flex-wrap: wrap; gap: var(--spacing-02) var(--spacing-05); margin-top: var(--spacing-05); padding-top: var(--spacing-04); border-top: 1px solid var(--border-subtle); }
 .legend__item { display: inline-flex; align-items: center; gap: var(--spacing-03); }
@@ -609,26 +612,33 @@ tr.is-focus .cellsub { color: inherit; }
 .rh-q2 { background: var(--tag-yellow-bg); color: var(--tag-yellow-text); }
 .rh-q3 { background: var(--tag-red-bg); color: var(--tag-red-text); }
 .rh-q5 { background: transparent; border: 1px solid var(--border-strong); color: var(--text-secondary); }
-/* quarter range slider */
-.rh-slider-field { padding: 0 var(--spacing-05) var(--spacing-03); }
-.rh-slider-wrap { position: relative; height: 56px; margin-top: var(--spacing-03); }
-.rh-slider-track { position: absolute; left: 0; right: 0; top: 14px; height: 4px;
-  background: var(--border-subtle); border-radius: 2px; pointer-events: none; }
-.rh-slider-fill { position: absolute; top: 0; height: 4px; background: var(--link-primary); border-radius: 2px; }
-.rh-slider { position: absolute; top: 0; left: 0; width: 100%; height: 32px;
+/* quarter range slider — left = now, right = further back (inverted direction) */
+.rh-slider-field { padding: 0 var(--spacing-05) var(--spacing-04); }
+.rh-slider-wrap { position: relative; height: 68px; margin-top: var(--spacing-03); }
+.rh-slider-track { position: absolute; left: 0; right: 0; top: 16px; height: 6px;
+  background: var(--border-subtle); border-radius: 3px; pointer-events: none; }
+.rh-slider-fill { position: absolute; top: 0; height: 6px;
+  background: #0f62fe; border-radius: 3px; }
+.rh-slider { position: absolute; top: 0; left: 0; width: 100%; height: 38px;
   -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
   outline: none; margin: 0; padding: 0; }
 .rh-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
-  width: 20px; height: 20px; border-radius: 50%; background: var(--link-primary);
-  border: 2px solid var(--background); box-shadow: 0 0 0 2px var(--link-primary);
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #0f62fe; border: 3px solid var(--background);
+  box-shadow: 0 0 0 2px #0f62fe, 0 2px 6px rgba(0,0,0,.35);
+  pointer-events: auto; cursor: pointer; transition: box-shadow .1s; }
+.rh-slider:hover::-webkit-slider-thumb,
+.rh-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(15,98,254,.3), 0 2px 8px rgba(0,0,0,.4); }
+.rh-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%;
+  background: #0f62fe; border: 3px solid var(--background);
+  box-shadow: 0 0 0 2px #0f62fe, 0 2px 6px rgba(0,0,0,.35);
   pointer-events: auto; cursor: pointer; }
-.rh-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%;
-  background: var(--link-primary); border: 2px solid var(--background);
-  box-shadow: 0 0 0 2px var(--link-primary); pointer-events: auto; cursor: pointer; }
-.rh-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--focus); }
+.rh-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px rgba(15,98,254,.3); }
 .rh-slider--end { z-index: 1; }
-.rh-slider-ticks { display: flex; justify-content: space-between; padding-top: 36px;
+.rh-slider-labels { display: flex; justify-content: space-between; padding-top: 42px;
   font-size: 11px; color: var(--text-secondary); pointer-events: none; user-select: none; }
+.rh-slider-labels span:first-child { color: var(--text-primary); font-weight: 600; }
 /* seller autocomplete */
 .rh-ac-wrap { position: relative; }
 .rh-ac-list { position: absolute; z-index: 200; left: 0; right: 0; top: calc(100% + 2px);
@@ -734,6 +744,13 @@ tr.is-focus .cellsub { color: inherit; }
           <div id="chips"></div>
           <div class="field"><label for="hub">Hub</label><select id="hub" class="select"></select></div>
           <div class="field">
+            <label for="q-terr">Search territory or state</label>
+            <div class="search">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M15 14.3 10.7 10a6 6 0 1 0-.7.7l4.3 4.3zM2 6.5a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0z"/></svg>
+              <input id="q-terr" class="input" type="search" placeholder="State (e.g. Texas, TX, NY) or Hub" autocomplete="off">
+            </div>
+          </div>
+          <div class="field">
             <label for="q">Search people</label>
             <div class="search">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M15 14.3 10.7 10a6 6 0 1 0-.7.7l4.3 4.3zM2 6.5a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0z"/></svg>
@@ -822,17 +839,18 @@ tr.is-focus .cellsub { color: inherit; }
       <div class="field rh-slider-field">
         <label id="rh-slider-label">Quarter range: <b id="rh-slider-display">Last 4 quarters</b></label>
         <div class="rh-slider-wrap" aria-labelledby="rh-slider-label">
-          <input id="rh-qstart" class="rh-slider" type="range" min="1" max="12" value="4"
-            aria-label="Start quarters ago" aria-valuetext="4 quarters ago">
-          <input id="rh-qend" class="rh-slider rh-slider--end" type="range" min="0" max="11" value="0"
-            aria-label="End quarters ago" aria-valuetext="Current quarter">
+          <!-- both inputs span the full width; JS maps visual position to logical quarter value -->
+          <!-- "end" handle (right = further back): low value = far right visually after inversion -->
+          <input id="rh-qend" class="rh-slider" type="range" min="0" max="11" value="0"
+            aria-label="Recent end (quarters ago)" aria-valuetext="Now">
+          <!-- "start" handle: high value = far right = further back -->
+          <input id="rh-qstart" class="rh-slider rh-slider--end" type="range" min="1" max="12" value="4"
+            aria-label="How far back (quarters)" aria-valuetext="4 quarters ago">
           <div class="rh-slider-track" aria-hidden="true">
             <div id="rh-slider-fill" class="rh-slider-fill"></div>
           </div>
-          <div class="rh-slider-ticks" aria-hidden="true">
-            <span>1Q</span><span>2Q</span><span>3Q</span><span>4Q</span><span>5Q</span>
-            <span>6Q</span><span>7Q</span><span>8Q</span><span>9Q</span><span>10Q</span>
-            <span>11Q</span><span>12Q</span>
+          <div class="rh-slider-labels" aria-hidden="true">
+            <span>← Now</span><span>12Q ago →</span>
           </div>
         </div>
       </div>
@@ -921,11 +939,12 @@ const PARTNER = Object.fromEntries(D.partners.map(p => [p.id, p]));
 /* ------------------------------------------------------------------ state */
 const S = {
   roles: new Set(['bts_ai', 'bts_data']),
-  hub: 'all', q: '',
+  hub: 'all', q: '', qTerr: '',
   sel: [],
   slot: {},
   example: false,
   focus: null,
+  litStates: new Set(), // multiple individually clicked/selected states
   view: 'map', panel: 'place',
   sort: { key: 'state', dir: 1 },
   hubSel: new Set(), // seat IDs added automatically by hub picker
@@ -1136,27 +1155,36 @@ function paintMap() {
   M.states.forEach(s => {
     const g = $(`.st[data-st="${s.id}"]`, svg);
     const cl = claims(s.id);
+    const isLit = S.litStates.has(s.id);
+    g.classList.toggle('is-lit', isLit && !cl.length);
     const f = fillFor(cl);
     const ov = $('.ov', g);
     ov.style.fill = f.fill;
     ov.style.fillOpacity = f.op;
     const names = cl.map(c => seatLabel(SEAT[c.id])).join(', ');
     g.setAttribute('aria-label', `${D.stateName[s.id]}${names ? '. Selected coverage: ' + names : ''}. Press Enter for details.`);
-    g.setAttribute('aria-pressed', S.focus === s.id ? 'true' : 'false');
+    g.setAttribute('aria-pressed', S.focus === s.id || isLit ? 'true' : 'false');
   });
   // NYC marker
   const ncl = claimsZone('NY:NYC');
   const nf = fillFor(ncl);
   const dot = $('#nycDot');
-  dot.style.fill = ncl.length ? nf.fill : 'var(--map-state)';
+  const nycLit = S.litStates.has('NY');
+  dot.style.fill = ncl.length ? nf.fill : (nycLit ? 'var(--tag-blue-bg)' : 'var(--map-state)');
   const nyc = $('.nyc', svg);
   nyc.setAttribute('aria-label', 'New York City. Press Enter for details.');
   defs.innerHTML = Array.from(patterns.values()).join('');
 
-  // focus + hub rings
+  // focus + lit state rings + hub rings
   const fr = $('#focusRing');
+  let ringsHtml = '';
+  S.litStates.forEach(stCode => {
+    const sObj = M.states.find(s => s.id === stCode);
+    if (sObj && sObj.id !== S.focus) ringsHtml += `<path class="ring-lit" d="${sObj.d}"/>`;
+  });
   const st = M.states.find(s => s.id === S.focus);
-  fr.innerHTML = st ? `<path class="ring" d="${st.d}"/>` : '';
+  if (st) ringsHtml += `<path class="ring" d="${st.d}"/>`;
+  fr.innerHTML = ringsHtml;
   const hr = $('#hubRings');
   if (S.hub === 'all') hr.innerHTML = '';
   else {
@@ -1171,8 +1199,10 @@ function paintMap() {
     if (cl.length === 1) bg = `var(--c${cl[0].slot})`;
     else if (cl.length > 1) bg = `repeating-linear-gradient(45deg, ${cl.map((c, i) => `var(--c${c.slot}) ${i * 5}px ${(i + 1) * 5}px`).join(', ')})`;
     b.style.background = bg || 'var(--map-state)';
+    const isLit = S.litStates.has(id);
     b.classList.toggle('is-focus', S.focus === id);
-    b.setAttribute('aria-pressed', S.focus === id ? 'true' : 'false');
+    b.classList.toggle('is-lit', isLit && !cl.length);
+    b.setAttribute('aria-pressed', S.focus === id || isLit ? 'true' : 'false');
   });
 }
 
@@ -1202,7 +1232,7 @@ function tipHTML(st) {
 
   return `<div class="tip__head"><span class="tip__state">${esc(D.stateName[st])}</span><span class="tip__hub">${esc(hubLabel)}</span></div>
 <div class="tip__rows">${roleRows}</div>
-<div class="tip__hint">Double-click to add all to map</div>`;
+<div class="tip__hint">Click to select · Double-click to shade full BTS territory</div>`;
 }
 
 function wireMap() {
@@ -1224,36 +1254,75 @@ function wireMap() {
   svg.addEventListener('mousemove', move);
   svg.addEventListener('mouseleave', () => { tip.hidden = true; });
 
-  // Single click — focus the state (show detail panel)
-  // Double click — add everyone covering this state (in active roles) to the map
+  // Single click — toggle/light up state & show owner details
+  // Double click — show all territories of the BTSs covering that state
   let clickTimer = null;
   svg.addEventListener('click', e => {
     const st = stOf(e.target);
     if (!st) return;
     if (clickTimer) {
-      // Second click arrived quickly — treat as double-click
       clearTimeout(clickTimer);
       clickTimer = null;
-      addStateToMap(st);
+      addBtsTerritoriesToMap(st);
     } else {
-      clickTimer = setTimeout(() => { clickTimer = null; focusState(st); }, 220);
+      clickTimer = setTimeout(() => { clickTimer = null; toggleStateLight(st); }, 220);
     }
   });
 
   svg.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { const st = stOf(e.target); if (st) { e.preventDefault(); focusState(st); } }
+    if (e.key === 'Enter' || e.key === ' ') { const st = stOf(e.target); if (st) { e.preventDefault(); toggleStateLight(st); } }
   });
   new ResizeObserver(layoutLabels).observe(svg);
 }
 
-function addStateToMap(st) {
-  focusState(st); // always focus so the detail panel updates
+function toggleStateLight(st) {
+  if (S.litStates.has(st)) {
+    S.litStates.delete(st);
+    if (S.focus === st) {
+      S.focus = S.litStates.size ? Array.from(S.litStates)[S.litStates.size - 1] : null;
+    }
+  } else {
+    S.litStates.add(st);
+    S.focus = st;
+  }
+  S.panel = 'place';
+  paintMap(); renderDetail(); renderStatebar();
+  if (S.view === 'table') renderTable();
+  const body = $('#detailBody'); body.scrollTop = 0;
+  if (window.matchMedia('(max-width: 799px)').matches) $('.col-detail-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function addBtsTerritoriesToMap(st) {
+  focusState(st);
   let added = 0, skipped = 0;
-  // For each active role, add every seat covering this state
+  // Double-clicking adds all BTS (AI & Data) seats covering this state to shade their full territories
+  const btsRoles = ['bts_ai', 'bts_data'];
+  btsRoles.forEach(rId => {
+    if (!S.roles.has(rId)) S.roles.add(rId);
+    (BY_STATE[st][rId] || []).forEach(en => {
+      if (S.sel.includes(en.seat.id)) return;
+      if (S.sel.length >= MAXSEL) { skipped++; return; }
+      S.sel.push(en.seat.id);
+      S.slot[en.seat.id] = freeSlot();
+      added++;
+    });
+  });
+  renderChips();
+  S.example = false;
+  renderSelection();
+  const msg = added
+    ? `Shaded full territory for ${added} BTS specialist${added === 1 ? '' : 's'} covering ${D.stateName[st]}.`
+    : `BTS territories covering ${D.stateName[st]} are already displayed on the map.`;
+  say(msg);
+}
+
+function addStateToMap(st) {
+  focusState(st);
+  let added = 0, skipped = 0;
   D.roles.forEach(r => {
     if (!S.roles.has(r.id)) return;
     (BY_STATE[st][r.id] || []).forEach(en => {
-      if (S.sel.includes(en.seat.id)) return; // already on map
+      if (S.sel.includes(en.seat.id)) return;
       if (S.sel.length >= MAXSEL) { skipped++; return; }
       S.sel.push(en.seat.id);
       S.slot[en.seat.id] = freeSlot();
@@ -1445,25 +1514,31 @@ function renderTable() {
 /* ------------------------------------------------------------------ state banner */
 function renderStatebar() {
   const bar = $('#statebar');
-  if (!S.focus) { bar.classList.remove('is-visible'); return; }
-  const st = S.focus;
-  $('#statebar-name').textContent = D.stateName[st];
+  const activeStates = S.litStates.size ? Array.from(S.litStates) : (S.focus ? [S.focus] : []);
+  if (!activeStates.length) { bar.classList.remove('is-visible'); return; }
 
-  const people = [];
-  D.roles.forEach(r => {
-    if (!S.roles.has(r.id)) return;
-    const entries = BY_STATE[st][r.id] || [];
-    entries.forEach(e => {
-      const on = S.sel.includes(e.seat.id);
-      const full = S.sel.length >= MAXSEL && !on;
-      // Only use a real color when the person is actually on the map
-      const cssVar = on ? `--c${S.slot[e.seat.id]}` : null;
-      const name = e.seat.vacant ? 'Open seat' : e.seat.name;
-      const area = !e.full ? ` (${e.have.map(z => ZSHORT[z]||z).join(', ')})` : '';
-      people.push({ id: e.seat.id, name, role: r.label, cssVar, on, full, area });
+  const namesLabel = activeStates.map(st => D.stateName[st] || st).join(', ');
+  $('#statebar-name').textContent = activeStates.length > 1 ? `${activeStates.length} states: ${namesLabel}` : D.stateName[activeStates[0]];
+
+  const peopleMap = new Map();
+  activeStates.forEach(st => {
+    D.roles.forEach(r => {
+      if (!S.roles.has(r.id)) return;
+      const entries = BY_STATE[st][r.id] || [];
+      entries.forEach(e => {
+        if (!peopleMap.has(e.seat.id)) {
+          const on = S.sel.includes(e.seat.id);
+          const full = S.sel.length >= MAXSEL && !on;
+          const cssVar = on ? `--c${S.slot[e.seat.id]}` : null;
+          const name = e.seat.vacant ? 'Open seat' : e.seat.name;
+          const area = !e.full ? ` (${e.have.map(z => ZSHORT[z]||z).join(', ')})` : '';
+          peopleMap.set(e.seat.id, { id: e.seat.id, name, role: r.label, cssVar, on, full, area });
+        }
+      });
     });
   });
 
+  const people = Array.from(peopleMap.values());
   if (!people.length) { bar.classList.remove('is-visible'); return; }
 
   $('#statebar-people').innerHTML = people.map(p => {
@@ -1477,7 +1552,9 @@ function renderStatebar() {
 }
 
 function focusState(st) {
-  S.focus = st; S.panel = 'place';
+  S.focus = st;
+  S.litStates.add(st);
+  S.panel = 'place';
   paintMap(); renderDetail(); renderStatebar();
   if (S.view === 'table') renderTable();
   const body = $('#detailBody'); body.scrollTop = 0;
@@ -1555,6 +1632,28 @@ function init() {
     if (!setSeat(id, e.target.checked)) { e.target.checked = false; }
   });
   $('#q').addEventListener('input', e => { S.q = e.target.value.trim(); renderPeople(); });
+  $('#q-terr').addEventListener('input', e => {
+    const val = e.target.value.trim().toLowerCase();
+    S.qTerr = val;
+    S.litStates.clear();
+    if (val) {
+      // Match state code, state full name, or hub names/numbers
+      STATES.forEach(st => {
+        const sName = (D.stateName[st] || '').toLowerCase();
+        const sCode = st.toLowerCase();
+        const hubs = (STATE_ZONES[st] || []).map(z => (ZONE_HUB[z] || '').toLowerCase());
+        const hubNames = hubs.map(hId => (HUB[hId.toUpperCase()]?.label || '').toLowerCase());
+        if (sCode === val || sName.includes(val) || hubs.some(h => h.includes(val) || ('hub ' + h).includes(val)) || hubNames.some(hn => hn.includes(val))) {
+          S.litStates.add(st);
+        }
+      });
+      if (S.litStates.size) {
+        S.focus = Array.from(S.litStates)[0];
+      }
+    }
+    paintMap(); renderDetail(); renderStatebar();
+    if (S.view === 'table') renderTable();
+  });
   $('#hub').addEventListener('change', e => {
     // Remove any seats that were auto-added by the previous hub selection
     S.hubSel.forEach(id => {
@@ -1591,8 +1690,8 @@ function init() {
     const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     applyTheme(cur === 'dark' ? 'light' : 'dark');
   });
-  $('#statebar-dismiss').addEventListener('click', () => { S.focus = null; paintMap(); renderDetail(); renderStatebar(); if (S.view === 'table') renderTable(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.focus && !e.target.closest('input,select')) { S.focus = null; paintMap(); renderDetail(); renderStatebar(); if (S.view === 'table') renderTable(); } });
+  $('#statebar-dismiss').addEventListener('click', () => { S.focus = null; S.litStates.clear(); paintMap(); renderDetail(); renderStatebar(); if (S.view === 'table') renderTable(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && (S.focus || S.litStates.size) && !e.target.closest('input,select')) { S.focus = null; S.litStates.clear(); paintMap(); renderDetail(); renderStatebar(); if (S.view === 'table') renderTable(); } });
   try { const t = localStorage.getItem('cov-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) { /* ignore */ }
 
   /* ------------------------------------------------------------------ ISC lookup */
@@ -1862,17 +1961,19 @@ function initReheat() {
     el.end.value = iso(toEnd > now ? now : toEnd);
   }
   function sliderSync() {
-    let s = parseInt(el.qstart.value, 10);
-    let e = parseInt(el.qend.value, 10);
+    let s = parseInt(el.qstart.value, 10);  // how far back = further right
+    let e = parseInt(el.qend.value, 10);    // recent end   = further left
     // enforce start > end (start is further back)
     if (s <= e) { s = e + 1; el.qstart.value = s; }
     el.qstart.setAttribute('aria-valuetext', qLabel(s));
-    el.qend.setAttribute('aria-valuetext', qLabel(e));
-    const max = parseInt(el.qstart.max, 10);
-    const pctStart = ((s - 1) / (max - 1)) * 100;
-    const pctEnd   = (e / (max - 1)) * 100;
-    el.sliderFill.style.left  = pctEnd + '%';
-    el.sliderFill.style.width = (pctStart - pctEnd) + '%';
+    el.qend.setAttribute('aria-valuetext', e === 0 ? 'Now' : qLabel(e));
+    // Inverted: left = 0 quarters ago (Now), right = 12 quarters ago
+    // visual pct: 0 = leftmost (Now), 100 = rightmost (12Q ago)
+    const MAX = 12;
+    const pctS = (s / MAX) * 100;   // start handle: further right
+    const pctE = (e / MAX) * 100;   // end handle:   further left
+    el.sliderFill.style.left  = pctE + '%';
+    el.sliderFill.style.width = (pctS - pctE) + '%';
     const span = s === 1 ? '1 quarter' : `${s} quarters`;
     el.sliderDisplay.textContent = e === 0 ? `Last ${span}` : `${qLabel(s)} → ${qLabel(e)}`;
     sliderDates(s, e);
