@@ -626,34 +626,43 @@ tr.is-focus .cellsub { color: inherit; }
 .rh-status.is-info { background: var(--tag-blue-bg); color: var(--tag-blue-text); }
 .rh-status.is-error { background: var(--tag-red-bg); color: var(--tag-red-text); }
 .rh-status.is-success { background: var(--layer-02); border: 1px solid var(--border-subtle); }
+.rh-status.is-loading { display: flex; align-items: center; gap: var(--spacing-04); background: var(--tag-blue-bg); color: var(--tag-blue-text); }
+.rh-spinner { flex: none; width: 20px; height: 20px; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: rh-spin .8s linear infinite; }
+.rh-eta { margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rh-bar { height: 3px; margin-top: var(--spacing-02); background: rgba(0,0,0,.12); }
+.rh-bar > i { display: block; height: 100%; width: 0; background: currentColor; transition: width .5s linear; }
+@keyframes rh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rh-spinner { animation-duration: 2.4s; } }
 .rh-meta { display: flex; flex-wrap: wrap; gap: var(--spacing-03) var(--spacing-05); padding: var(--spacing-03) var(--spacing-05); border-top: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 13px; }
 .rh-meta b { color: var(--text-primary); font-weight: 600; }
-.rh-table { min-width: 1200px; }
+.rh-table { min-width: 1700px; }
+.rh-table td.ml { white-space: pre-line; }
 .rh-table th { height: 48px; padding: 0 var(--spacing-04); white-space: nowrap; }
 .rh-table td.amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rh-q1 { background: var(--tag-blue-bg); color: var(--tag-blue-text); }
 .rh-q2 { background: var(--tag-yellow-bg); color: var(--tag-yellow-text); }
 .rh-q3 { background: var(--tag-red-bg); color: var(--tag-red-text); }
 .rh-q5 { background: transparent; border: 1px solid var(--border-strong); color: var(--text-secondary); }
-/* quarter range slider — left = now, right = further back (inverted direction) */
-.rh-slider-field { padding: 0 var(--spacing-05) var(--spacing-04); }
+/* quarter range slider — time runs left to right: far left = 12 quarters ago, far right = now.
+   Both inputs share one 0..12 scale and thumb size so the fill lines up with the circles. */
+.rh-slider-field { --rh-thumb: 24px; padding: 0 var(--spacing-05) var(--spacing-04); }
 .rh-slider-wrap { position: relative; height: 68px; margin-top: var(--spacing-03); }
 .rh-slider-track { position: absolute; left: 0; right: 0; top: 16px; height: 6px;
   background: var(--border-subtle); border-radius: 3px; pointer-events: none; }
-.rh-slider-fill { position: absolute; top: 0; height: 6px;
+.rh-slider-fill { position: absolute; top: 0; height: 6px; left: 0; width: 0;
   background: #0f62fe; border-radius: 3px; }
 .rh-slider { position: absolute; top: 0; left: 0; width: 100%; height: 38px;
   -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
   outline: none; margin: 0; padding: 0; }
-.rh-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
-  width: 24px; height: 24px; border-radius: 50%;
+.rh-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; box-sizing: border-box;
+  width: var(--rh-thumb); height: var(--rh-thumb); border-radius: 50%;
   background: #0f62fe; border: 3px solid var(--background);
   box-shadow: 0 0 0 2px #0f62fe, 0 2px 6px rgba(0,0,0,.35);
   pointer-events: auto; cursor: pointer; transition: box-shadow .1s; }
 .rh-slider:hover::-webkit-slider-thumb,
 .rh-slider:focus-visible::-webkit-slider-thumb {
   box-shadow: 0 0 0 4px rgba(15,98,254,.3), 0 2px 8px rgba(0,0,0,.4); }
-.rh-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%;
+.rh-slider::-moz-range-thumb { box-sizing: border-box; width: var(--rh-thumb); height: var(--rh-thumb); border-radius: 50%;
   background: #0f62fe; border: 3px solid var(--background);
   box-shadow: 0 0 0 2px #0f62fe, 0 2px 6px rgba(0,0,0,.35);
   pointer-events: auto; cursor: pointer; }
@@ -661,7 +670,7 @@ tr.is-focus .cellsub { color: inherit; }
 .rh-slider--end { z-index: 1; }
 .rh-slider-labels { display: flex; justify-content: space-between; padding-top: 42px;
   font-size: 11px; color: var(--text-secondary); pointer-events: none; user-select: none; }
-.rh-slider-labels span:first-child { color: var(--text-primary); font-weight: 600; }
+.rh-slider-labels span:last-child { color: var(--text-primary); font-weight: 600; }
 /* seller autocomplete */
 .rh-ac-wrap { position: relative; }
 .rh-ac-list { position: absolute; z-index: 200; left: 0; right: 0; top: calc(100% + 2px);
@@ -806,13 +815,29 @@ tr.is-focus .cellsub { color: inherit; }
     <div class="rh-form">
       <div class="rh-grid">
         <div class="field rh-span">
-          <label for="rh-seller">Start from a seller (optional)</label>
+          <label for="rh-seller">Start from one or more people (optional)</label>
           <div class="rh-ac-wrap" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="rh-ac-list">
             <input id="rh-seller" class="input" type="text" placeholder="Type a seller name…" autocomplete="off"
               aria-autocomplete="list" aria-controls="rh-ac-list" aria-activedescendant="">
             <ul id="rh-ac-list" class="rh-ac-list" role="listbox" aria-label="Seller suggestions" hidden></ul>
           </div>
-          <span class="t-helper">Pick a seller to fill in their zones. You can then add or remove zones, or type any name.</span>
+          <span class="t-helper">Pick a person to fill in their zones. Pick more to combine their territories, then add or remove zones.</span>
+          <div class="rh-row" id="rh-people" aria-label="Selected people"></div>
+        </div>
+        <div class="field">
+          <label for="rh-combine">When several people are picked</label>
+          <select id="rh-combine" class="select">
+            <option value="overlap" selected>Only territory they share (overlap)</option>
+            <option value="union">All of their territory (combined)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="rh-tier">Select coverage</label>
+          <select id="rh-tier" class="select">
+            <option value="activate" selected>Activate (ACT CORE + ACT OTH)</option>
+            <option value="core">ACT CORE only</option>
+            <option value="all">Activate + Grow</option>
+          </select>
         </div>
       </div>
 
@@ -858,18 +883,18 @@ tr.is-focus .cellsub { color: inherit; }
       <div class="field rh-slider-field">
         <label id="rh-slider-label">Quarter range: <b id="rh-slider-display">Last 4 quarters</b></label>
         <div class="rh-slider-wrap" aria-labelledby="rh-slider-label">
-          <!-- both inputs span the full width; JS maps visual position to logical quarter value -->
-          <!-- "end" handle (right = further back): low value = far right visually after inversion -->
-          <input id="rh-qend" class="rh-slider" type="range" min="0" max="11" value="0"
-            aria-label="Recent end (quarters ago)" aria-valuetext="Now">
-          <!-- "start" handle: high value = far right = further back -->
-          <input id="rh-qstart" class="rh-slider rh-slider--end" type="range" min="1" max="12" value="4"
+          <!-- Both inputs share one 0..12 scale (value = 12 minus quarters ago): 0 = 12 quarters ago, 12 = now. -->
+          <!-- Left handle: how far back the range starts. -->
+          <input id="rh-qstart" class="rh-slider" type="range" min="0" max="12" value="8"
             aria-label="How far back (quarters)" aria-valuetext="4 quarters ago">
+          <!-- Right handle: where the range ends (far right = now). -->
+          <input id="rh-qend" class="rh-slider rh-slider--end" type="range" min="0" max="12" value="12"
+            aria-label="Recent end (quarters ago)" aria-valuetext="Now">
           <div class="rh-slider-track" aria-hidden="true">
             <div id="rh-slider-fill" class="rh-slider-fill"></div>
           </div>
           <div class="rh-slider-labels" aria-hidden="true">
-            <span>← Now</span><span>12Q ago →</span>
+            <span>12 quarters ago</span><span>Now</span>
           </div>
         </div>
       </div>
@@ -893,11 +918,14 @@ tr.is-focus .cellsub { color: inherit; }
               <th scope="col"><span class="t-heading-01">Opportunity</span></th>
               <th scope="col"><span class="t-heading-01">Amount</span></th>
               <th scope="col"><span class="t-heading-01">Queue</span></th>
+              <th scope="col"><span class="t-heading-01">Loss reason</span></th>
               <th scope="col"><span class="t-heading-01">Why it merits attention</span></th>
               <th scope="col"><span class="t-heading-01">Recommended next move</span></th>
               <th scope="col"><span class="t-heading-01">Start with</span></th>
               <th scope="col"><span class="t-heading-01">Timing</span></th>
-              <th scope="col"><span class="t-heading-01">Contacts</span></th>
+              <th scope="col"><span class="t-heading-01">Client contact(s)</span></th>
+              <th scope="col"><span class="t-heading-01">Client role / title</span></th>
+              <th scope="col"><span class="t-heading-01">Contact info</span></th>
               <th scope="col"><span class="t-heading-01">Overlap</span></th>
               <th scope="col"><span class="t-heading-01">Salesforce</span></th>
             </tr>
@@ -1895,6 +1923,7 @@ function initReheat() {
   const API = location.origin;
   const el = {
     seller: $('#rh-seller'), acList: $('#rh-ac-list'), acWrap: $('#rh-ac-list').parentElement,
+    people: $('#rh-people'), combine: $('#rh-combine'), tier: $('#rh-tier'),
     zones: $('#rh-zones'), count: $('#rh-zone-count'),
     start: $('#rh-start'), end: $('#rh-end'), min: $('#rh-min'), max: $('#rh-max'), pg: $('#rh-pg'),
     run: $('#rh-run'), status: $('#rh-status'), results: $('#rh-results'), meta: $('#rh-meta'),
@@ -1947,23 +1976,49 @@ function initReheat() {
       li.addEventListener('mousedown', e => { e.preventDefault(); acPick(matches[i]); });
     });
   }
-  function acPick(name) {
-    el.seller.value = name;
-    acHide();
+  // People picked so far. Their zones fill the zone chips: the zones they share, or all of them.
+  const people = [];
+  const sameSet = (a, b) => a.size === b.size && [...a].every(x => b.has(x));
+  function zonesOf(name) {
     const lower = name.toLowerCase();
-    // 1. Try API-sourced zones (available when server is running)
+    // API-sourced zones are available when the server is running; D.seats also works on GitHub Pages.
     const apiKey = Object.keys(sellerZones).find(k => k.toLowerCase() === lower);
-    if (apiKey) {
-      picked.clear(); sellerZones[apiKey].forEach(z => picked.add(z)); renderZones(); return;
-    }
-    // 2. Fall back to D.seats embedded in the page (works on GitHub Pages too)
-    const seats = D.seats.filter(s => s.name && s.name.toLowerCase() === lower);
-    if (seats.length) {
-      picked.clear();
-      seats.forEach(s => (s.zones || []).forEach(z => picked.add(z)));
-      renderZones();
-    }
+    if (apiKey) return new Set(sellerZones[apiKey]);
+    const out = new Set();
+    D.seats.filter(s => s.name && s.name.toLowerCase() === lower)
+      .forEach(s => (s.zones || []).forEach(z => out.add(z)));
+    return out;
   }
+  function peopleZones() {
+    const sets = people.map(zonesOf);
+    if (!sets.length) return new Set();
+    return sets.reduce((a, b) => el.combine.value === 'union'
+      ? new Set([...a, ...b]) : new Set([...a].filter(z => b.has(z))));
+  }
+  function renderPeople() {
+    el.people.innerHTML = people.map((n, i) =>
+      `<button type="button" class="chip" data-rh-person="${i}" aria-label="Remove ${esc(n)}" title="Remove ${esc(n)}">${esc(n)} ×</button>`
+    ).join('');
+  }
+  function applyPeople() {
+    picked.clear();
+    peopleZones().forEach(z => { if (validZones.has(z)) picked.add(z); });
+    renderPeople();
+    renderZones();
+  }
+  function acPick(name) {
+    el.seller.value = '';
+    acHide();
+    if (!people.some(n => n.toLowerCase() === name.toLowerCase())) people.push(name);
+    applyPeople();
+  }
+  el.people.addEventListener('click', e => {
+    const b = e.target.closest('[data-rh-person]');
+    if (!b) return;
+    people.splice(Number(b.dataset.rhPerson), 1);
+    applyPeople();
+  });
+  el.combine.addEventListener('change', () => { if (people.length > 1) applyPeople(); });
   el.seller.addEventListener('input', () => acShow(el.seller.value));
   el.seller.addEventListener('keydown', e => {
     if (el.acList.hidden) return;
@@ -1979,9 +2034,67 @@ function initReheat() {
   D.hubs.forEach(h => h.zones.forEach(z => { zoneRegion[z] = h.region; }));
 
   function say(msg, kind) {
+    stopLoading();
     el.status.textContent = msg;
     el.status.className = 'rh-status is-' + kind;
     el.status.hidden = false;
+  }
+
+  // Loading indicator: spinner, elapsed time and an estimate. The estimate is learned from this
+  // browser's previous runs (seconds per zone, kept in localStorage) with a conservative default.
+  const ETA_KEY = 'rh-sec-per-zone';
+  const DEFAULT_SEC_PER_ZONE = 25;
+  let loadTimer = null;
+
+  function estimateSeconds(zoneCount) {
+    let per = parseFloat(localStorage.getItem(ETA_KEY));
+    if (!(per > 0 && per < 600)) per = DEFAULT_SEC_PER_ZONE;
+    return Math.max(10, Math.round(per * Math.max(1, zoneCount)));
+  }
+
+  function fmtSecs(s) {
+    s = Math.max(0, Math.round(s));
+    return s < 60 ? s + 's' : Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's';
+  }
+
+  function startLoading(zoneCount) {
+    stopLoading();
+    const est = estimateSeconds(zoneCount);
+    const t0 = Date.now();
+    const box = el.status;
+    box.className = 'rh-status is-loading';
+    box.hidden = false;
+    box.textContent = '';
+    const spin = document.createElement('span'); spin.className = 'rh-spinner'; spin.setAttribute('aria-hidden', 'true');
+    const msg = document.createElement('span');
+    msg.textContent = `Querying ISC for ${zoneCount} zone${zoneCount === 1 ? '' : 's'}. Estimated time: about ${fmtSecs(est)}.`;
+    const eta = document.createElement('span'); eta.className = 'rh-eta'; eta.setAttribute('aria-hidden', 'true');
+    const bar = document.createElement('div'); bar.className = 'rh-bar'; bar.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('i'); bar.appendChild(fill);
+    box.append(spin, msg, eta);
+    box.after(bar); // removed again in stopLoading
+    const tick = () => {
+      const el_s = (Date.now() - t0) / 1000;
+      fill.style.width = Math.min(95, (el_s / est) * 100) + '%';
+      eta.textContent = el_s <= est
+        ? `${fmtSecs(el_s)} elapsed · ~${fmtSecs(est - el_s)} left`
+        : `${fmtSecs(el_s)} elapsed · taking longer than usual`;
+    };
+    tick();
+    loadTimer = { id: setInterval(tick, 500), t0, bar, zoneCount };
+  }
+
+  function stopLoading(recordRun) {
+    if (!loadTimer) return;
+    clearInterval(loadTimer.id);
+    loadTimer.bar.remove();
+    if (recordRun) {
+      const per = (Date.now() - loadTimer.t0) / 1000 / Math.max(1, loadTimer.zoneCount);
+      const old = parseFloat(localStorage.getItem(ETA_KEY));
+      const mixed = old > 0 ? (old + per) / 2 : per; // smooth over runs
+      try { localStorage.setItem(ETA_KEY, String(Math.min(600, mixed))); } catch (e) { /* storage unavailable */ }
+    }
+    loadTimer = null;
   }
 
   function zonesInRegion(r) {
@@ -2002,17 +2115,12 @@ function initReheat() {
     el.count.textContent = picked.size ? `(${picked.size} selected)` : '(none selected)';
   }
 
-  function matchSeller() {
-    const v = el.seller.value.trim().toLowerCase();
-    return Object.keys(sellerZones).find(n => n.toLowerCase() === v) || '';
-  }
-
-  // The seller name is only used as the workbook label while the picked zones are exactly that seller's zones.
-  function labelSeller() {
-    const n = matchSeller();
-    if (!n) return '';
-    const z = sellerZones[n];
-    return z.length === picked.size && z.every(x => picked.has(x)) ? n : '';
+  // People are sent only while the picked zones are exactly what they produce; edit the zones by hand
+  // and the request falls back to the zones alone.
+  function pickedPeople() {
+    if (!people.length) return [];
+    const z = new Set([...peopleZones()].filter(x => validZones.has(x)));
+    return sameSet(z, picked) ? people.slice() : [];
   }
 
   // ── quarter range slider ─────────────────────────────────────────────────
@@ -2030,20 +2138,26 @@ function initReheat() {
     const toEnd = new Date(Date.UTC(Math.floor(toQ / 4), (toQ % 4) * 3 + 3, 0));
     el.end.value = iso(toEnd > now ? now : toEnd);
   }
-  function sliderSync() {
-    let s = parseInt(el.qstart.value, 10);  // how far back = further right
-    let e = parseInt(el.qend.value, 10);    // recent end   = further left
-    // enforce start > end (start is further back)
-    if (s <= e) { s = e + 1; el.qstart.value = s; }
+  const SLIDER_MAX = 12;
+  const THUMB_PX = 24; // keep in sync with --rh-thumb
+  function sliderSync(ev) {
+    // Slider positions run left to right (0 = 12 quarters ago, 12 = now); convert to "quarters ago".
+    let ps = parseInt(el.qstart.value, 10);  // left handle: start of the range
+    let pe = parseInt(el.qend.value, 10);    // right handle: end of the range
+    // The handle being dragged stops against the other one; the range is at least one quarter.
+    if (ps >= pe) {
+      if (ev && ev.target === el.qend) { pe = Math.min(SLIDER_MAX, ps + 1); ps = pe - 1; }
+      else { ps = Math.max(0, pe - 1); pe = ps + 1; }
+      el.qstart.value = ps; el.qend.value = pe;
+    }
+    const s = SLIDER_MAX - ps;  // quarters ago the range starts (1..12)
+    const e = SLIDER_MAX - pe;  // quarters ago the range ends (0 = now)
     el.qstart.setAttribute('aria-valuetext', qLabel(s));
     el.qend.setAttribute('aria-valuetext', e === 0 ? 'Now' : qLabel(e));
-    // Inverted: left = 0 quarters ago (Now), right = 12 quarters ago
-    // visual pct: 0 = leftmost (Now), 100 = rightmost (12Q ago)
-    const MAX = 12;
-    const pctS = (s / MAX) * 100;   // start handle: further right
-    const pctE = (e / MAX) * 100;   // end handle:   further left
-    el.sliderFill.style.left  = pctE + '%';
-    el.sliderFill.style.width = (pctS - pctE) + '%';
+    // A native thumb's centre sits half a thumb inside the track ends, so offset the fill the same way.
+    const usable = `(100% - ${THUMB_PX}px)`;
+    el.sliderFill.style.left  = `calc(${THUMB_PX / 2}px + ${usable} * ${ps / SLIDER_MAX})`;
+    el.sliderFill.style.width = `calc(${usable} * ${(pe - ps) / SLIDER_MAX})`;
     const span = s === 1 ? '1 quarter' : `${s} quarters`;
     el.sliderDisplay.textContent = e === 0 ? `Last ${span}` : `${qLabel(s)} → ${qLabel(e)}`;
     sliderDates(s, e);
@@ -2051,8 +2165,8 @@ function initReheat() {
   el.qstart.addEventListener('input', sliderSync);
   el.qend.addEventListener('input', sliderSync);
   function range(quarters) {
-    el.qstart.value = quarters;
-    el.qend.value = 0;
+    el.qstart.value = SLIDER_MAX - quarters;
+    el.qend.value = SLIDER_MAX;
     sliderSync();
   }
 
@@ -2062,15 +2176,19 @@ function initReheat() {
   function params() {
     const p = {
       zones: Array.from(picked), start_date: el.start.value, end_date: el.end.value,
-      min_amount: parseFloat(el.min.value), max_accounts: parseInt(el.max.value, 10), product_group: el.pg.value
+      min_amount: parseFloat(el.min.value), max_accounts: parseInt(el.max.value, 10), product_group: el.pg.value,
+      tier: el.tier.value
     };
-    const s = labelSeller();
-    if (s) p.seller = s;
+    const s = pickedPeople();
+    if (s.length) { p.sellers = s; p.combine = el.combine.value; }
     return p;
   }
 
+  let lastZoneCount = 1;
+
   function render(data, p) {
     const m = data.meta;
+    lastZoneCount = m.zones.length;
     el.meta.innerHTML = [
       `<span><b>${esc(m.seller)}</b></span>`,
       `<span>${esc(m.start_date)} to ${esc(m.end_date)}</span>`,
@@ -2086,8 +2204,9 @@ function initReheat() {
         <td>${i + 1}</td><td>${esc(d.account_name)}</td><td>${esc(d.opp_name)}</td>
         <td class="amt">${esc(money(d.amount))}</td>
         <td><span class="tag rh-q${q}">${esc(QUEUE[q] || q)}</span></td>
+        <td>${esc(d.loss_label || d.loss_reason)}</td>
         <td>${esc(d.why)}</td><td>${esc(d.move)}</td><td>${esc(d.owner_name)}</td><td>${esc(d.timing)}</td>
-        <td>${esc(d.contact_count || 0)}</td>
+        <td class="ml">${esc(d.client_names)}</td><td class="ml">${esc(d.client_titles)}</td><td class="ml">${esc(d.client_contact_info)}</td>
         <td>${d.has_open_overlap ? '<span class="tag tag--blue">Open deal</span>' : ''}</td>
         <td><a href="${esc(sf)}" target="_blank" rel="noopener" style="color:var(--link)">Open</a></td>
       </tr>`;
@@ -2096,7 +2215,8 @@ function initReheat() {
       zones: p.zones.join(','), start_date: p.start_date, end_date: p.end_date, min_amount: p.min_amount,
       max_accounts: p.max_accounts, product_group: p.product_group
     });
-    if (p.seller) qs.set('seller', p.seller);
+    qs.set('tier', p.tier);
+    if (p.sellers) { qs.set('sellers', p.sellers.join(',')); qs.set('combine', p.combine); }
     el.download.innerHTML = `<a class="btn btn--tertiary" href="${esc(API + '/api/reheat/xlsx?' + qs)}" download>Download .xlsx tracker</a>`;
     el.results.hidden = false;
   }
@@ -2111,7 +2231,7 @@ function initReheat() {
 
     el.run.disabled = true;
     el.results.hidden = true;
-    say('Querying ISC…', 'info');
+    startLoading(p.zones.length);
     try {
       const res = await fetch(API + '/api/reheat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p)
@@ -2119,12 +2239,14 @@ function initReheat() {
       if (res.status === 401) { location.assign('/auth/login'); return; }
       const data = await res.json();
       if (!res.ok) return say(data.error || 'Server error.', 'error');
+      stopLoading(true);
       render(data, p);
       const n = data.meta.zones.length;
       say(`Found ${data.meta.total_deals} deal${data.meta.total_deals === 1 ? '' : 's'} across ${n} zone${n === 1 ? '' : 's'}.`, 'success');
     } catch (e) {
       say('The reheat server is not reachable. This tab works only on the signed-in site.', 'error');
     } finally {
+      stopLoading();
       el.run.disabled = false;
     }
   }
@@ -2147,8 +2269,43 @@ function initReheat() {
   });
   $('#rh-zones-clear').addEventListener('click', () => { picked.clear(); renderZones(); });
   el.run.addEventListener('click', runQuery);
+
+  // The workbook download re-runs the query, so show the same spinner and estimate while it builds.
+  el.download.addEventListener('click', async e => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    e.preventDefault();
+    if (loadTimer) return;
+    const zoneCount = Math.max(1, lastZoneCount);
+    el.run.disabled = true;
+    startLoading(zoneCount);
+    try {
+      const res = await fetch(a.getAttribute('href'));
+      if (res.status === 401) { location.assign('/auth/login'); return; }
+      if (!res.ok) {
+        let msg = 'Could not build the workbook.';
+        try { msg = (await res.json()).error || msg; } catch (x) { /* not JSON */ }
+        return say(msg, 'error');
+      }
+      const blob = await res.blob();
+      stopLoading(true);
+      const m = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = m ? m[1] : 'Reheat_Tracker.xlsx';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      say('Workbook downloaded.', 'success');
+    } catch (x) {
+      say('The reheat server is not reachable.', 'error');
+    } finally {
+      stopLoading();
+      el.run.disabled = false;
+    }
+  });
   $('#rh-reset').addEventListener('click', () => {
-    el.seller.value = ''; acHide(); picked.clear(); renderZones(); range(4);
+    el.seller.value = ''; acHide(); people.length = 0; renderPeople(); picked.clear(); renderZones(); range(4);
+    el.combine.value = 'overlap'; el.tier.value = 'activate';
     el.min.value = '8000'; el.max.value = '10'; el.pg.value = 'Data Platform';
     el.results.hidden = true; el.status.hidden = true;
   });
